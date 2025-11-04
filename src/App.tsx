@@ -7,7 +7,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import coldark from "react-syntax-highlighter/dist/esm/styles/prism/coldark-dark";
 import Lottie from "lottie-react";
 import { hi, heart, code, run, loading, terminal } from "./assets";
-import { Toggle } from "./components";
+import { Toggle, ProductTour } from "./components";
+import { createExampleProgram } from "./utils/createExampleProgram";
 import "./blocks";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isCodeEditable, setIsCodeEditable] = useState(false);
+  const [tourRun, setTourRun] = useState(false);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
 
   const handleCodeUpdate = useCallback((code: string) => {
@@ -99,6 +101,25 @@ export default function App() {
     }
   }, [pikCode]);
 
+  // Funciones para el tour
+  const startTour = useCallback(() => {
+    setTourRun(true);
+  }, []);
+
+  const handleTourEnd = useCallback(() => {
+    setTourRun(false);
+  }, []);
+
+  const handleCreateExample = useCallback(() => {
+    if (workspaceRef.current) {
+      createExampleProgram(workspaceRef.current);
+      // Ejecutar el ejemplo automáticamente después de un breve delay
+      setTimeout(() => {
+        handleRunCode();
+      }, 1500);
+    }
+  }, [handleRunCode]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 p-4">
       <div className="max-w-full mx-auto space-y-6">
@@ -109,7 +130,7 @@ export default function App() {
             autoplay
             className="w-40 md:w-60 lg:w-72"
           />
-          <div>
+          <div className="flex-1">
             <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-[#fdafcc] via-[#d6bee2] to-[#a3d1fe] text-transparent bg-clip-text drop-shadow-md">
               PIK Visual
             </h1>
@@ -117,10 +138,16 @@ export default function App() {
               Aprende a programar con bloques visuales
             </p>
           </div>
+          <button
+            onClick={startTour}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors font-semibold flex items-center gap-2"
+          >
+            🎯 Tour Guiado
+          </button>
         </header>
 
         {/* Editor de bloques */}
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-white rounded-lg shadow-md p-4" data-tour="blocks-editor">
           <div className="relative flex justify-between items-center mb-3">
             <div className="flex items-center gap-3 mb-3">
               <Lottie
@@ -155,7 +182,7 @@ export default function App() {
         {/* Panel de código + Consola en misma fila */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Código PIK */}
-          <div className="flex-1 transition-all duration-300 ease-in-out bg-white rounded-lg shadow-md p-4">
+          <div className="flex-1 transition-all duration-300 ease-in-out bg-white rounded-lg shadow-md p-4" data-tour="code-view">
             <div className="flex justify-between items-center mb-3">
               {/* Título con animación */}
               <div className="flex items-center gap-2">
@@ -174,6 +201,7 @@ export default function App() {
               <button
                 onClick={handleRunCode}
                 disabled={isRunning || !pikCode.trim()}
+                data-tour="run-button"
                 className="px-4 py-2 bg-[#9f9f9f] text-white rounded hover:bg-[#7e7e7e] disabled:bg-gray-300 cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isRunning ? (
@@ -200,7 +228,7 @@ export default function App() {
               </button>
             </div>
             {/* ─────────────── Opciones del editor de código ─────────────── */}
-            <div className="flex flex-wrap gap-4 mb-4 items-center">
+            <div className="flex flex-wrap gap-4 mb-4 items-center" data-tour="controls">
               {/* Toggle con separación */}
               <div className="border border-gray-300 rounded px-3 py-2 bg-gray-100 shadow-sm">
                 <Toggle
@@ -254,7 +282,7 @@ export default function App() {
           </div>
 
           {/* Consola */}
-          <div className="flex-1 transition-all duration-300 ease-in-out bg-gray-900 text-green-400 rounded-lg shadow-md p-4">
+          <div className="flex-1 transition-all duration-300 ease-in-out bg-gray-900 text-green-400 rounded-lg shadow-md p-4" data-tour="console">
             <div className="flex items-center gap-2 mb-3">
               <Lottie
                 animationData={terminal}
@@ -281,6 +309,13 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* Product Tour */}
+      <ProductTour
+        run={tourRun}
+        onTourEnd={handleTourEnd}
+        onCreateExample={handleCreateExample}
+      />
     </div>
   );
 }
