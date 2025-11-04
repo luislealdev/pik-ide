@@ -30,6 +30,7 @@ export default function BlockButton({
       draggable
       onClick={handleClick}
       onDragStart={handleDragStart}
+      data-block-type={tipo}
       className="cursor-grab px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 text-sm mx-auto"
     >
       🧱 {tipo}

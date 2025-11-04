@@ -1,20 +1,18 @@
-// src/components/ProductTour/ProductTour.tsx
-import { useCallback } from 'react';
-import Joyride, { STATUS } from 'react-joyride';
+// src/components/ProductTour/InteractiveProductTour.tsx
+import { useCallback, useEffect } from 'react';
+import Joyride, { STATUS, ACTIONS } from 'react-joyride';
 import type { CallBackProps, Step } from 'react-joyride';
 
-interface ProductTourProps {
+interface InteractiveProductTourProps {
   run: boolean;
   onTourEnd: () => void;
-  onStepAction?: (stepIndex: number, action: string) => void;
+  currentStepIndex: number;
+  onStepChange: (direction: 'next' | 'prev') => void;
+  isWaitingForAction: boolean;
+  onWaitForAction: (selector: string, actionType?: 'click' | 'change') => void;
 }
 
-interface ProductTourProps {
-  run: boolean;
-  onTourEnd: () => void;
-}
-
-const steps: Step[] = [
+const createSteps = (isWaitingForAction: boolean, currentStepIndex: number): Step[] => [
   {
     target: 'body',
     content: (
@@ -42,7 +40,19 @@ const steps: Step[] = [
       <div>
         <h3 className="text-lg font-bold mb-2">Paso 1: Abrir la Paleta 🎨</h3>
         <p><strong>👆 Haz clic en "☰ Bloques"</strong> para abrir la paleta con todos los bloques disponibles.</p>
-        <p className="mt-2 text-sm text-gray-600">Esto te mostrará las categorías de bloques que puedes usar.</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {isWaitingForAction && currentStepIndex === 2 
+            ? "⏳ Esperando que hagas clic en el botón..." 
+            : "Esto te mostrará las categorías de bloques que puedes usar."
+          }
+        </p>
+        {isWaitingForAction && currentStepIndex === 2 && (
+          <div className="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="text-sm font-medium text-yellow-800">
+              ⚡ Haz clic en el botón "☰ Bloques" para continuar
+            </p>
+          </div>
+        )}
       </div>
     ),
     placement: 'bottom',
@@ -54,7 +64,7 @@ const steps: Step[] = [
       <div>
         <h3 className="text-lg font-bold mb-2">Paso 2: Buscar el bloque "repetir" 🔄</h3>
         <p>En la paleta que acabas de abrir, busca la categoría <strong>"🧠 Control de flujo"</strong> y encuentra el bloque <strong>"🧱 repetir"</strong>.</p>
-        <p className="mt-2"><strong>👆 Arrastra</strong> el bloque "repetir" al área de trabajo (el espacio grande gris).</p>
+        <p className="mt-2"><strong>👆 Haz clic</strong> en el bloque "repetir" para agregarlo al workspace.</p>
         <p className="mt-2 text-sm text-gray-600">Este bloque nos permitirá repetir acciones varias veces.</p>
       </div>
     ),
@@ -66,7 +76,7 @@ const steps: Step[] = [
     content: (
       <div>
         <h3 className="text-lg font-bold mb-2">Paso 3: Agregar el número 5 🔢</h3>
-        <p>Ahora necesitas decirle al bloque "repetir" cuántas veces debe repetirse. Ve a la categoría <strong>"🔢 Valores"</strong> y arrastra un bloque <strong>"🧱 numero"</strong>.</p>
+        <p>Ahora necesitas decirle al bloque "repetir" cuántas veces debe repetirse. Ve a la categoría <strong>"🔢 Valores"</strong> y haz clic en el bloque <strong>"🧱 numero"</strong>.</p>
         <p className="mt-2"><strong>👆 Conecta</strong> el bloque número en el espacio que dice "veces" del bloque repetir.</p>
         <p className="mt-2"><strong>✏️ Cambia</strong> el valor del número a <strong>5</strong> haciendo clic en él.</p>
       </div>
@@ -78,8 +88,8 @@ const steps: Step[] = [
     target: '[data-tour="blocks-editor"]',
     content: (
       <div>
-        <h3 className="text-lg font-bold mb-2">Paso 4: Agregar bloque "mostrar" �️</h3>
-        <p>Ahora vamos a decirle qué queremos mostrar. Ve a la categoría <strong>"⚙️ Acciones"</strong> y arrastra un bloque <strong>"🧱 mostrar"</strong>.</p>
+        <h3 className="text-lg font-bold mb-2">Paso 4: Agregar bloque "mostrar" 🗣️</h3>
+        <p>Ahora vamos a decirle qué queremos mostrar. Ve a la categoría <strong>"⚙️ Acciones"</strong> y haz clic en el bloque <strong>"🧱 mostrar"</strong>.</p>
         <p className="mt-2"><strong>👆 Conecta</strong> el bloque "mostrar" DENTRO del bloque "repetir" (en el área que aparece después de "veces:").</p>
         <p className="mt-2 text-sm text-gray-600">Esto hará que la acción "mostrar" se repita 5 veces.</p>
       </div>
@@ -92,7 +102,7 @@ const steps: Step[] = [
     content: (
       <div>
         <h3 className="text-lg font-bold mb-2">Paso 5: Agregar el texto "¡Hola Mundo!" 📝</h3>
-        <p>Por último, necesitamos decirle qué texto mostrar. Ve a la categoría <strong>"🔢 Valores"</strong> y arrastra un bloque <strong>"🧱 texto"</strong>.</p>
+        <p>Por último, necesitamos decirle qué texto mostrar. Ve a la categoría <strong>"🔢 Valores"</strong> y haz clic en el bloque <strong>"🧱 texto"</strong>.</p>
         <p className="mt-2"><strong>👆 Conecta</strong> el bloque "texto" al bloque "mostrar".</p>
         <p className="mt-2"><strong>✏️ Cambia</strong> el texto a <strong>"¡Hola Mundo!"</strong> haciendo clic en él.</p>
       </div>
@@ -121,7 +131,19 @@ const steps: Step[] = [
       <div>
         <h3 className="text-lg font-bold mb-2">Paso 6: ¡Ejecutar el programa! ▶️</h3>
         <p><strong>👆 Haz clic en "Ejecutar"</strong> para ver tu programa en acción.</p>
-        <p className="mt-2 text-sm text-gray-600">¡Este es el momento más emocionante!</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {isWaitingForAction && currentStepIndex === 8
+            ? "⏳ Esperando que ejecutes el programa..."
+            : "¡Este es el momento más emocionante!"
+          }
+        </p>
+        {isWaitingForAction && currentStepIndex === 8 && (
+          <div className="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="text-sm font-medium text-yellow-800">
+              ⚡ Haz clic en "Ejecutar" para continuar
+            </p>
+          </div>
+        )}
       </div>
     ),
     placement: 'left',
@@ -147,48 +169,83 @@ const steps: Step[] = [
   },
 ];
 
-export default function ProductTour({ run, onTourEnd }: ProductTourProps) {
+export default function InteractiveProductTour({ 
+  run, 
+  onTourEnd, 
+  currentStepIndex, 
+  onStepChange, 
+  isWaitingForAction,
+  onWaitForAction 
+}: InteractiveProductTourProps) {
+  // Configurar las acciones que requieren interacción del usuario
+  useEffect(() => {
+    if (!run) return;
+
+    if (currentStepIndex === 2) { // Paso: hacer clic en "Bloques"
+      onWaitForAction('[data-tour="blocks-button"]', 'click');
+    } else if (currentStepIndex === 8) { // Paso: hacer clic en "Ejecutar"
+      onWaitForAction('[data-tour="run-button"]', 'click');
+    }
+  }, [currentStepIndex, run, onWaitForAction]);
+
   const handleJoyrideCallback = useCallback(
     (data: CallBackProps) => {
-      const { status } = data;
+      const { status, action } = data;
 
       // Si el tour termina o se omite
       if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
         onTourEnd();
+        return;
+      }
+
+      // Solo permitir navegación si no estamos esperando una acción
+      if (!isWaitingForAction) {
+        if (action === ACTIONS.NEXT) {
+          onStepChange('next');
+        } else if (action === ACTIONS.PREV) {
+          onStepChange('prev');
+        }
       }
     },
-    [onTourEnd]
+    [onTourEnd, isWaitingForAction, onStepChange]
   );
+
+  const steps = createSteps(isWaitingForAction, currentStepIndex);
 
   return (
     <Joyride
       steps={steps}
       run={run}
+      stepIndex={currentStepIndex}
       continuous
       showSkipButton
       showProgress
       callback={handleJoyrideCallback}
+      disableScrolling={true}
       styles={{
         options: {
-          primaryColor: '#3b82f6',
+          primaryColor: isWaitingForAction ? '#f59e0b' : '#3b82f6',
           width: 400,
           zIndex: 1000,
         },
         tooltip: {
           borderRadius: 12,
           padding: 20,
+          border: isWaitingForAction ? '2px solid #f59e0b' : '1px solid #e5e7eb',
         },
         tooltipContent: {
           padding: '0 8px',
         },
         buttonNext: {
-          backgroundColor: '#3b82f6',
+          backgroundColor: isWaitingForAction ? '#9ca3af' : '#3b82f6',
           borderRadius: 8,
           padding: '8px 16px',
+          cursor: isWaitingForAction ? 'not-allowed' : 'pointer',
         },
         buttonBack: {
           color: '#6b7280',
           marginRight: 8,
+          opacity: isWaitingForAction ? 0.5 : 1,
         },
         buttonSkip: {
           color: '#9ca3af',
@@ -198,7 +255,7 @@ export default function ProductTour({ run, onTourEnd }: ProductTourProps) {
         back: '⬅️ Anterior',
         close: '❌ Cerrar',
         last: '🎉 ¡Finalizar!',
-        next: '➡️ Siguiente',
+        next: isWaitingForAction ? '⏳ Esperando...' : '➡️ Siguiente',
         skip: '⏭️ Saltar tour',
       }}
     />

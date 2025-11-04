@@ -171,6 +171,7 @@ export default function Editor({
         /* añade: */
         items-center
       "
+          data-tour="blocks-panel"
         >
           <div
             className="

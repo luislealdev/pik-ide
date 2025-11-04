@@ -7,8 +7,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import coldark from "react-syntax-highlighter/dist/esm/styles/prism/coldark-dark";
 import Lottie from "lottie-react";
 import { hi, heart, code, run, loading, terminal } from "./assets";
-import { Toggle, ProductTour } from "./components";
-import { createExampleProgram } from "./utils/createExampleProgram";
+import { Toggle } from "./components";
+import InteractiveStepByStepTour from "./components/ProductTour/InteractiveStepByStepTour";
 import "./blocks";
 
 export default function App() {
@@ -103,46 +103,48 @@ export default function App() {
 
   // Funciones para el tour
   const startTour = useCallback(() => {
+    // Limpiar workspace antes de empezar el tour
+    if (workspaceRef.current) {
+      workspaceRef.current.clear();
+      setPikCode("");
+      setOutput("");
+    }
+    console.log("🚀 Iniciando tour...");
     setTourRun(true);
   }, []);
 
   const handleTourEnd = useCallback(() => {
+    console.log("🏁 Tour terminado");
     setTourRun(false);
   }, []);
-
-  const handleCreateExample = useCallback(() => {
-    if (workspaceRef.current) {
-      createExampleProgram(workspaceRef.current);
-      // Ejecutar el ejemplo automáticamente después de un breve delay
-      setTimeout(() => {
-        handleRunCode();
-      }, 1500);
-    }
-  }, [handleRunCode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 p-4">
       <div className="max-w-full mx-auto space-y-6">
-        <header className="flex flex-col md:flex-row items-center justify-center mb-4 gap-4 text-center md:text-left">
-          <Lottie
-            animationData={hi}
-            loop
-            autoplay
-            className="w-40 md:w-60 lg:w-72"
-          />
-          <div className="flex-1">
-            <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-[#fdafcc] via-[#d6bee2] to-[#a3d1fe] text-transparent bg-clip-text drop-shadow-md">
-              PIK Visual
-            </h1>
-            <p className="text-gray-600 text-lg mt-2">
-              Aprende a programar con bloques visuales
-            </p>
+                <header className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <Lottie
+              animationData={hi}
+              loop
+              autoplay
+              className="w-40 md:w-60 lg:w-72"
+            />
+            <div>
+              <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-[#fdafcc] via-[#d6bee2] to-[#a3d1fe] text-transparent bg-clip-text drop-shadow-md">
+                PIK Visual
+              </h1>
+              <p className="text-gray-600 text-lg mt-2">
+                Aprende a programar con bloques visuales
+              </p>
+            </div>
           </div>
+          
+          {/* Botón para iniciar tour */}
           <button
             onClick={startTour}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg transition-colors font-semibold flex items-center gap-2"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
           >
-            🎯 Tour Guiado
+            � Tour Interactivo
           </button>
         </header>
 
@@ -310,11 +312,10 @@ export default function App() {
         </div>
       </div>
 
-      {/* Product Tour */}
-      <ProductTour
+      {/* Interactive Step-by-Step Tour */}
+      <InteractiveStepByStepTour
         run={tourRun}
         onTourEnd={handleTourEnd}
-        onCreateExample={handleCreateExample}
       />
     </div>
   );
